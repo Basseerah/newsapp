@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import '../view/home_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../view/main_shell_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,44 +14,67 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
 
-    Timer(Duration(seconds: 8), () {
-      Navigator.push(
-          context, MaterialPageRoute(builder: (context) => HomeScreen()));
+    // Navigate to the main shell screen after a short delay
+    Timer(const Duration(seconds: 3), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainShellScreen()),
+      );
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.sizeOf(context).height * 1;
-    final width = MediaQuery.sizeOf(context).width * 1;
+    final height = MediaQuery.sizeOf(context).height;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF111111),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Container(
-              height: height * .5,
-              width: double.infinity,
-              child: Image.asset(
-                "image/news-2.jpg",
-                fit: BoxFit.fill,
-              )),
-          SizedBox(
-            height: height * 0.04,
+          // Splash Image with rounded corners
+          Center(
+            child: Container(
+              height: height * 0.4,
+              margin: const EdgeInsets.symmetric(horizontal: 32),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                image: const DecorationImage(
+                  image: AssetImage("image/news-2.jpg"),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
           ),
-          const Text(
+          SizedBox(height: height * 0.05),
+
+          // Stylized Title
+          Text(
             "Top Headlines",
-            style: TextStyle(fontSize: 50, fontWeight: FontWeight.bold),
+            style: GoogleFonts.outfit(
+              color: Colors.white,
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
           ),
-          SizedBox(height: height * 0.04),
+          const SizedBox(height: 8),
+          Text(
+            "Curated News at Your Fingertips",
+            style: GoogleFonts.outfit(
+              color: Colors.white38,
+              fontSize: 14,
+            ),
+          ),
+          SizedBox(height: height * 0.05),
+
+          // Spinner
           const SpinKitRotatingCircle(
-            color: Colors.cyan,
-            size: 50.0,
+            color: Colors.white60,
+            size: 40.0,
           )
         ],
       ),

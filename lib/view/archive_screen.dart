@@ -131,70 +131,80 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
             final processedHistorical = _processList(_historicalCollection);
             final processedPicks = _processList(_editorsPicks);
 
+            // Combine list to show overlapping cards in a single stacked scroll list
+            final List<BookmarkArticle> combinedList = [];
+            combinedList.addAll(processedSaved);
+            combinedList.addAll(processedHistorical);
+            combinedList.addAll(processedPicks);
+
             return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+              padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 12.0, bottom: 100.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 12),
-                  // Header
-                  Center(
-                    child: Column(
-                      children: [
-                        Text(
-                          "THE ARCHIVES",
-                          style: GoogleFonts.oldStandardTt(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2,
-                            color: VintageColors.text,
+                  const SizedBox(height: 8),
+
+                  // 1. Saved News Header with a back button and center title
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          // Standard action for back: pop or go back to main screen index
+                          Navigator.maybePop(context);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: VintageColors.backgroundDark,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                            size: 20,
                           ),
                         ),
-                        Text(
-                          "PRESERVED EDITIONS & DISPATCHES",
-                          style: GoogleFonts.libreBaskerville(
-                            fontSize: 10,
-                            letterSpacing: 1.5,
-                            color: VintageColors.accent,
+                      ),
+                      const Expanded(
+                        child: Center(
+                          child: Text(
+                            "Saved News",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Container(
-                          width: 80,
-                          height: 2,
-                          color: VintageColors.accent,
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 36), // Balanced alignment spacing
+                    ],
                   ),
                   const SizedBox(height: 20),
 
-                  // Archive Search & Sort Controls
-                  VintageSearchBar(
+                  // 2. Custom Pill Search Bar
+                  CustomPillSearchBar(
                     controller: _searchController,
-                    onClear: () {
-                      _searchController.clear();
-                    },
+                    hintText: "Search news",
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 12),
 
-                  // Sort & Filter Controls Row
+                  // 3. Sorting & Filtering Controls
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Sort dropdown
                       Row(
                         children: [
                           Text(
                             "Sort: ",
-                            style: GoogleFonts.libreBaskerville(fontSize: 11, color: VintageColors.muted),
+                            style: GoogleFonts.outfit(fontSize: 12, color: Colors.white54),
                           ),
                           DropdownButton<String>(
                             value: _sortBy,
-                            dropdownColor: VintageColors.cardBg,
-                            iconEnabledColor: VintageColors.accent,
-                            underline: Container(height: 1, color: VintageColors.border),
-                            style: GoogleFonts.ebGaramond(fontSize: 13, color: VintageColors.text),
+                            dropdownColor: VintageColors.backgroundDark,
+                            iconEnabledColor: Colors.white70,
+                            underline: Container(height: 1, color: Colors.white24),
+                            style: GoogleFonts.outfit(fontSize: 13, color: Colors.white),
                             items: ["Newest", "Oldest", "Category", "Author"].map((sortOpt) {
                               return DropdownMenuItem<String>(
                                 value: sortOpt,
@@ -211,19 +221,18 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                           ),
                         ],
                       ),
-                      // Filter dropdown
                       Row(
                         children: [
                           Text(
                             "Category: ",
-                            style: GoogleFonts.libreBaskerville(fontSize: 11, color: VintageColors.muted),
+                            style: GoogleFonts.outfit(fontSize: 12, color: Colors.white54),
                           ),
                           DropdownButton<String>(
                             value: _selectedCategoryFilter,
-                            dropdownColor: VintageColors.cardBg,
-                            iconEnabledColor: VintageColors.accent,
-                            underline: Container(height: 1, color: VintageColors.border),
-                            style: GoogleFonts.ebGaramond(fontSize: 13, color: VintageColors.text),
+                            dropdownColor: VintageColors.backgroundDark,
+                            iconEnabledColor: Colors.white70,
+                            underline: Container(height: 1, color: Colors.white24),
+                            style: GoogleFonts.outfit(fontSize: 13, color: Colors.white),
                             items: allCategories.map((cat) {
                               return DropdownMenuItem<String>(
                                 value: cat,
@@ -242,87 +251,47 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 16),
 
-                  // Section 1: Recently Saved (User bookmarks)
-                  if (processedSaved.isNotEmpty) ...[
-                    const SectionHeader(title: "Recently Saved"),
-                    ArchiveGrid(
-                      articles: processedSaved,
-                      onCardTap: (article) => _navigateToDetail(context, article),
-                    ),
-                  ] else if (_searchQuery.isEmpty && _selectedCategoryFilter == "All") ...[
-                    const SectionHeader(title: "Recently Saved"),
-                    PaperContainer(
-                      padding: const EdgeInsets.all(16),
-                      doubleBorder: true,
-                      child: Center(
-                        child: Text(
-                          "No dispatches saved in current session. Bookmark articles from the Front page or Details screen.",
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.ebGaramond(
-                            fontSize: 14,
-                            fontStyle: FontStyle.italic,
-                            color: VintageColors.muted,
+                  // 4. Overlapping stacked pastel cards
+                  if (combinedList.isNotEmpty)
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: combinedList.length,
+                      itemBuilder: (context, index) {
+                        final article = combinedList[index];
+                        final cardBg = VintageColors.pastelPalette[index % VintageColors.pastelPalette.length];
+                        final isLast = index == combinedList.length - 1;
+
+                        // Align with heightFactor creates the stacked overlapping cards effect
+                        return Align(
+                          heightFactor: isLast ? 1.0 : 0.7,
+                          alignment: Alignment.topCenter,
+                          child: ArchiveCard(
+                            article: article,
+                            backgroundColor: cardBg,
+                            onTap: () => _navigateToDetail(context, article),
                           ),
+                        );
+                      },
+                    )
+                  else
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 80.0),
+                        child: Column(
+                          children: [
+                            const Icon(Icons.bookmark_outline, size: 60, color: Colors.white24),
+                            const SizedBox(height: 16),
+                            Text(
+                              "No saved news found",
+                              style: GoogleFonts.outfit(color: Colors.white38, fontSize: 16),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ],
-
-                  // Section 2: Today's Dispatch
-                  if (processedSaved.isNotEmpty) ...[
-                    const SectionHeader(title: "Today's Dispatch"),
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: processedSaved.length > 2 ? 2 : processedSaved.length,
-                      itemBuilder: (context, index) {
-                        final article = processedSaved[index];
-                        return NewspaperCard(
-                          title: article.title,
-                          description: article.description,
-                          imageUrl: article.urlToImage,
-                          author: article.author,
-                          date: article.publishedAt,
-                          category: article.category,
-                          onTap: () => _navigateToDetail(context, article),
-                        );
-                      },
-                    ),
-                  ],
-
-                  // Section 3: Historical Collection (Always visible, filtered)
-                  if (processedHistorical.isNotEmpty) ...[
-                    const SectionHeader(title: "Historical Collection"),
-                    ArchiveGrid(
-                      articles: processedHistorical,
-                      onCardTap: (article) => _navigateToDetail(context, article),
-                    ),
-                  ],
-
-                  // Section 4: Editor's Picks
-                  if (processedPicks.isNotEmpty) ...[
-                    const SectionHeader(title: "Editor's Picks"),
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: processedPicks.length,
-                      itemBuilder: (context, index) {
-                        final article = processedPicks[index];
-                        return NewspaperCard(
-                          title: article.title,
-                          description: article.description,
-                          imageUrl: article.urlToImage,
-                          author: article.author,
-                          date: article.publishedAt,
-                          category: article.category,
-                          onTap: () => _navigateToDetail(context, article),
-                        );
-                      },
-                    ),
-                  ],
-                  const SizedBox(height: 20),
                 ],
               ),
             );

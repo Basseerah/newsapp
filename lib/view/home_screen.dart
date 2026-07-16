@@ -1,15 +1,13 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../model/news_data_model.dart';
-import '../model/top_headlines_news_model.dart';
 import '../repository/news_repository.dart';
-import '../view/categories_screen.dart';
 import '../view/news_data.dart';
+import 'vintage_components.dart';
 
-enum filterList { bbcNews, aryNews, independent, reuters, cnn, alJazeera }
+enum filterList { bbcNews, aryNews, alJazeera }
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,295 +17,303 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  NewsRepository newsRepository = NewsRepository();
+  final NewsRepository newsRepository = NewsRepository();
   filterList? selectedItem;
   String name = "bbc-news";
+  String _selectedCategory = "Trending";
+
+  final List<String> _categories = ["Trending", "Health", "Sports", "Finance"];
+  final PageController _pageController = PageController(viewportFraction: 0.85);
+
+  Future<dynamic> _fetchTopNews() {
+    if (_selectedCategory == "Trending") {
+      return newsRepository.fetchNews(name);
+    } else {
+      String cat = _selectedCategory.toLowerCase();
+      if (cat == "finance") cat = "business";
+      return newsRepository.fetchCategoryNews(cat);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.sizeOf(context).height * 1;
-    final width = MediaQuery.sizeOf(context).width * 1;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("News",
-            style: GoogleFonts.lato(color: Colors.white, fontSize: 35)),
-        leading: GestureDetector(
-          onTap: () {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (context) => CategoriesScreen()));
-          },
-          child: const Icon(
-            Icons.category,
-            color: Colors.white,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.cyan,
-        actions: [
-          PopupMenuButton<filterList>(
-            icon: Icon(
-              Icons.more_vert_sharp,
-              color: Colors.white,
-            ),
-            onSelected: (filterList item) {
-              setState(() {
-                if (filterList.bbcNews == item) {
-                  name = 'bbc-news';
-                }
-                if (filterList.aryNews == item) {
-                  name = 'ary-news';
-                }
+    final height = MediaQuery.sizeOf(context).height;
+    final width = MediaQuery.sizeOf(context).width;
 
-                if (filterList.alJazeera == item) {
-                  name = 'al-jazeera-english';
-                }
-              });
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<filterList>>[
-              const PopupMenuItem<filterList>(
-                child: Text("BBC News"),
-                value: filterList.bbcNews,
+    return Scaffold(
+      backgroundColor: VintageColors.background,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 100),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+
+              // 1. Premium Custom Header Row (e News logo & Circular Popup Menu)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            "e",
+                            style: GoogleFonts.outfit(
+                              color: Colors.black,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "News",
+                          style: GoogleFonts.outfit(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24, width: 1.5),
+                      ),
+                      child: PopupMenuButton<filterList>(
+                        icon: const Icon(
+                          Icons.grid_view_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        onSelected: (filterList item) {
+                          setState(() {
+                            if (filterList.bbcNews == item) {
+                              name = 'bbc-news';
+                            }
+                            if (filterList.aryNews == item) {
+                              name = 'ary-news';
+                            }
+                            if (filterList.alJazeera == item) {
+                              name = 'al-jazeera-english';
+                            }
+                          });
+                        },
+                        itemBuilder: (BuildContext context) =>
+                            <PopupMenuEntry<filterList>>[
+                              const PopupMenuItem<filterList>(
+                                value: filterList.bbcNews,
+                                child: Text("BBC News"),
+                              ),
+                              const PopupMenuItem<filterList>(
+                                value: filterList.aryNews,
+                                child: Text('Ary News'),
+                              ),
+                              const PopupMenuItem<filterList>(
+                                value: filterList.alJazeera,
+                                child: Text('Al-Jazeera News'),
+                              ),
+                            ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const PopupMenuItem<filterList>(
-                value: filterList.aryNews,
-                child: Text('Ary News'),
+              const SizedBox(height: 20),
+
+              // 2. Category Tabs Row
+              SizedBox(
+                height: 48,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _categories.length,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  itemBuilder: (context, index) {
+                    final cat = _categories[index];
+                    final isSelected = _selectedCategory == cat;
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedCategory = cat;
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 8.0,
+                        ),
+                        child: Text(
+                          cat,
+                          style: GoogleFonts.outfit(
+                            color: isSelected ? Colors.white : Colors.white38,
+                            fontSize: isSelected ? 22 : 16,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-              const PopupMenuItem<filterList>(
-                value: filterList.alJazeera,
-                child: Text('Al-Jazeera News'),
-              ),
-            ],
-          )
-        ],
-      ),
-      body: Column(
-        children: [
-          SizedBox(
-              height: height * .55,
-              child: FutureBuilder<TopHeadlinesNewsModel>(
-                  future: newsRepository.fetchNews(name),
+              const SizedBox(height: 12),
+
+              // 3. Horizontal Carousel Top Headlines PageView (FutureBuilder)
+              SizedBox(
+                height: height * 0.52,
+                child: FutureBuilder<dynamic>(
+                  future: _fetchTopNews(),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
                         child: SpinKitFadingCircle(
                           size: 40,
-                          color: Colors.cyan,
+                          color: Colors.white24,
+                        ),
+                      );
+                    } else if (snapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          "Failed to load dispatches",
+                          style: GoogleFonts.outfit(color: Colors.white30),
                         ),
                       );
                     } else {
-                      return ListView.builder(
-                          //physics: NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          scrollDirection: Axis.horizontal,
-                          itemCount: snapshot.data?.articles?.length ?? 0,
-                          itemBuilder: (context, index) {
-                            var article = snapshot.data!.articles![index];
-                            var publishAtstr = article.publishedAt;
-                            var publishAt = DateTime.parse(publishAtstr!);
-                            var formattedDate =
-                                DateFormat('yyyy-MM-dd').format(publishAt);
-                            return GestureDetector(
-                              onTap: () {
-                                var title = snapshot
-                                    .data!.articles![index].title
-                                    .toString();
-                                var img = snapshot
-                                    .data!.articles![index].urlToImage
-                                    .toString();
-                                var source = snapshot
-                                    .data!.articles![index].author
-                                    .toString();
-                                var description = snapshot
-                                    .data!.articles![index].description
-                                    .toString();
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => NewsDataScreen(
-                                              description: description,
-                                              title: title,
-                                              source: source,
-                                              img: img,
-                                            )));
-                              },
-                              child: Stack(
-                                children: [
-                                  Container(
-                                    height: height * 0.55,
-                                    width: width * .9,
-                                    decoration: BoxDecoration(
-                                        borderRadius:
-                                            BorderRadius.circular(12)),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 10),
-                                      child: CachedNetworkImage(
-                                        imageUrl: snapshot
-                                            .data!.articles![index].urlToImage
-                                            .toString(),
-                                        fit: BoxFit.fill,
-                                        placeholder: (context, url) =>
-                                            const SpinKitCubeGrid(
-                                          size: 30,
-                                          color: Colors.cyan,
-                                        ),
-                                        errorWidget: (context, url, error) =>
-                                            const Icon(
-                                          Icons.error,
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                    ),
+                      final articles = snapshot.data?.articles ?? [];
+                      if (articles.isEmpty) {
+                        return Center(
+                          child: Text(
+                            "No articles found",
+                            style: GoogleFonts.outfit(color: Colors.white30),
+                          ),
+                        );
+                      }
+                      return PageView.builder(
+                        controller: _pageController,
+                        itemCount: articles.length,
+                        physics: const BouncingScrollPhysics(),
+                        itemBuilder: (context, index) {
+                          final article = articles[index];
+                          final publishAtstr = article.publishedAt;
+                          String formattedDate = "";
+                          if (publishAtstr != null) {
+                            try {
+                              var publishAt = DateTime.parse(publishAtstr);
+                              formattedDate = DateFormat(
+                                'yyyy-MM-dd',
+                              ).format(publishAt);
+                            } catch (_) {}
+                          }
+
+                          final cardBg =
+                              VintageColors.pastelPalette[index %
+                                  VintageColors.pastelPalette.length];
+
+                          return PremiumNewsCard(
+                            title: article.title ?? "Untitled Dispatch",
+                            description:
+                                article.description ??
+                                "No summary details supplied.",
+                            imageUrl: article.urlToImage ?? "",
+                            author: article.author ?? "Unknown Reporter",
+                            date: formattedDate,
+                            category: article.source?.name ?? "General",
+                            backgroundColor: cardBg,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => NewsDataScreen(
+                                    description: article.description ?? "",
+                                    title: article.title ?? "",
+                                    source:
+                                        article.author ?? "Unknown Reporter",
+                                    img: article.urlToImage ?? "",
                                   ),
-                                  Positioned(
-                                    top: height * .35,
-                                    left: width * .1,
-                                    child: Container(
-                                      height: height * .18,
-                                      width: width * .7,
-                                      decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius:
-                                              BorderRadius.circular(12)),
-                                      child: Column(
-                                        children: [
-                                          Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Text(
-                                              snapshot
-                                                  .data!.articles![index].title
-                                                  .toString(),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.aladin(
-                                                  fontSize: 24,
-                                                  color: Colors.black),
-                                            ),
-                                          ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Text(snapshot.data!
-                                                    .articles![index].author
-                                                    .toString()),
-                                                Text(formattedDate)
-                                              ],
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  )
-                                ],
-                              ),
-                            );
-                          });
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      );
                     }
-                  })),
-          Container(
-            height: height * .3,
-            child: FutureBuilder<newsDataModel>(
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // 4. Section Header
+              const SectionHeader(title: "Latest Dispatch"),
+
+              // 5. Vertical Latest News List View (FutureBuilder)
+              FutureBuilder<newsDataModel>(
                 future: newsRepository.fetchNewsData(),
                 builder: (context, state) {
                   if (state.connectionState == ConnectionState.waiting) {
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: 3,
+                      itemBuilder: (context, index) =>
+                          const NewspaperCardSkeleton(),
+                    );
+                  } else if (state.hasError) {
                     return Center(
-                      child: SpinKitDualRing(
-                        size: 20,
-                        color: Colors.cyan,
+                      child: Text(
+                        "Error loading latest dispatch items.",
+                        style: GoogleFonts.outfit(color: Colors.white30),
                       ),
                     );
                   } else {
+                    final articles = state.data?.articles ?? [];
                     return ListView.builder(
-                        shrinkWrap: true,
-                        // physics: NeverScrollableScrollPhysics(),
-                        scrollDirection: Axis.vertical,
-                        itemCount: state.data?.articles?.length ?? 0,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () {
-                              var title =
-                                  state.data!.articles![index].title.toString();
-                              var img = state.data!.articles![index].urlToImage
-                                  .toString();
-                              var source = state.data!.articles![index].author
-                                  .toString();
-                              var description = state
-                                  .data!.articles![index].description
-                                  .toString();
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => NewsDataScreen(
-                                            description: description,
-                                            title: title,
-                                            source: source,
-                                            img: img,
-                                          )));
-                            },
-                            child: Container(
-                              height: height * .25,
-                              width: width,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    height: height * .2,
-                                    width: width * .25,
-                                    child: state.data!.articles![index]
-                                                .urlToImage.toString !=
-                                            null
-                                        ? CachedNetworkImage(
-                                            imageUrl: state.data!
-                                                .articles![index].urlToImage
-                                                .toString(),
-                                            fit: BoxFit.fill,
-                                          )
-                                        : const Image(
-                                            image:
-                                                AssetImage('image/news-2.jpg'),
-                                            fit: BoxFit.fill,
-                                          ),
-                                  ),
-                                  Container(
-                                    height: height * .2,
-                                    width: width * .7,
-                                    child: Column(
-                                      children: [
-                                        Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Text(
-                                            state.data!.articles![index].title
-                                                .toString(),
-                                            maxLines: 2,
-                                            style: GoogleFonts.laila(
-                                                fontSize: 20,
-                                                color: Colors.black),
-                                          ),
-                                        ),
-                                        Text(
-                                          state.data!.articles![index].author
-                                              .toString(),
-                                          style: GoogleFonts.laila(
-                                              fontSize: 18,
-                                              color: Colors.black),
-                                        )
-                                      ],
-                                    ),
-                                  )
-                                ],
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: articles.length,
+                      itemBuilder: (context, index) {
+                        final article = articles[index];
+                        return NewspaperCard(
+                          title: article.title ?? "Untitled",
+                          description: article.description ?? "",
+                          imageUrl: article.urlToImage ?? "",
+                          author: article.author ?? "Unknown",
+                          date: article.publishedAt ?? "",
+                          category: "News",
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => NewsDataScreen(
+                                  description: article.description ?? "",
+                                  title: article.title ?? "",
+                                  source: article.author ?? "Unknown",
+                                  img: article.urlToImage ?? "",
+                                ),
                               ),
-                            ),
-                          );
-                        });
+                            );
+                          },
+                        );
+                      },
+                    );
                   }
-                }),
-          )
-        ],
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

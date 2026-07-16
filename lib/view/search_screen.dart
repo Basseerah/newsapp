@@ -226,19 +226,19 @@ class _SearchScreenState extends State<SearchScreen> {
               const SizedBox(height: 16),
               Text(
                 "No articles found.",
-                style: GoogleFonts.cormorantGaramond(
+                style: GoogleFonts.outfit(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: VintageColors.text,
+                  color: const Color(0xFF111111),
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 "No dispatches match the entered keyword. Verify query spelling or adjust the category filters.",
                 textAlign: TextAlign.center,
-                style: GoogleFonts.ebGaramond(
+                style: GoogleFonts.outfit(
                   fontSize: 14,
-                  color: VintageColors.muted,
+                  color: Colors.black54,
                   fontStyle: FontStyle.italic,
                 ),
               ),
