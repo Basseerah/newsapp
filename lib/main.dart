@@ -1,8 +1,22 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import '../view/splash_screen.dart';
+import 'core/constants/app_constants.dart';
+import 'views/screens/splash_screen.dart';
 
 void main() {
   runApp(const MyApp());
+}
+
+// Custom ScrollBehavior allowing mouse, trackpad, touchpad drag, and touch gestures globally
+class AppScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.trackpad,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.unknown,
+      };
 }
 
 class MyApp extends StatelessWidget {
@@ -11,8 +25,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
+      scrollBehavior: AppScrollBehavior(),
       theme: ThemeData(
         scaffoldBackgroundColor: const Color(0xFF111111),
         colorScheme: ColorScheme.fromSeed(
